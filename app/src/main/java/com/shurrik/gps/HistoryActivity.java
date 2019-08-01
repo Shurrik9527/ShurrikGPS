@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.shurrik.service.HistoryDBHelper;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -142,6 +143,7 @@ public class HistoryActivity extends AppCompatActivity {
             Cursor cursor = sqLiteDatabase.query(true, tableName, null,
                     "ID > ?", new String[]{"0"},
                     null, null, "TimeStamp DESC", null);
+            DecimalFormat decimalFormat  = new DecimalFormat("#.000000");
             while (cursor.moveToNext()) {
                 Map<String, String> item = new HashMap<>();
                 int ID = cursor.getInt(0);
@@ -153,7 +155,7 @@ public class HistoryActivity extends AppCompatActivity {
                 item.put("key_id", "" + ID);
                 item.put("key_location", address);
                 item.put("key_time", timeStamp2Date(Long.toString(timeStamp), null));
-                item.put("kdy_bdlatlng", "[经度:" + longitude + " 纬度:" + latitude + "]");
+                item.put("kdy_bdlatlng", decimalFormat.format(longitude) + "," + decimalFormat.format(latitude));
                 data.add(item);
             }
             // 关闭光标

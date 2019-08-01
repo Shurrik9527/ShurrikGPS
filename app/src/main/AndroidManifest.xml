@@ -66,7 +66,6 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity android:name="com.shurrik.gps.HistoryActivity" />
-        <activity android:name="com.shurrik.gps.OfflineMapActivity" />
 
         <!--<receiver android:name="com.shurrik.gps.MainActivity$MockServiceReceiver" />-->
     </application>
