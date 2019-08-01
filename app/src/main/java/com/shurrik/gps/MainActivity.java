@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -54,6 +55,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
+    private static final int HISTORY_CODE = 2048;
     private final String TAG = MainActivity.class.getName();
 
     //位置欺骗相关
@@ -67,18 +69,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private MarkerOptions markerOptions = null;
     private String address = null;
     private LatLng point = null;
+    private LatLng originPoint = null;
 
     private MapView mMapView;
     private BaiduMap mBaiduMap = null;
 
     //Button requestLocButton;
-    boolean isFirstLoc = true; // 是否首次定位
     private MyLocationData locData;
-
-    /**
-     * 悬浮窗是否开启
-     */
-    private boolean isFloatWindowStart = false;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -95,8 +92,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         //百度地图
         initBaiduMap();
 
-        //地图加载成功后读取所有历史记录并标记
-        readAllHistoryPoints();
+
     }
 
     private void initView() {
@@ -119,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      */
     private void initSqlite() {
         try {
+            //数据库工具类
             HistoryDBHelper historyDBHelper = new HistoryDBHelper(getApplicationContext());
             locHistoryDB = historyDBHelper.getWritableDatabase();
         } catch (Exception e) {
@@ -129,66 +126,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     /**
      * sqlite 操作 插表HistoryLocation
      */
-    private boolean insertHistoryLocTable(SQLiteDatabase sqLiteDatabase, String tableName, ContentValues contentValues) {
-        boolean isSuccess = true;
+    private long insertHistoryLocTable(SQLiteDatabase sqLiteDatabase, String tableName, ContentValues contentValues) {
+        long result;
         try {
-            sqLiteDatabase.insert(tableName, null, contentValues);
+            result = sqLiteDatabase.insert(tableName, null, contentValues);
         } catch (Exception e) {
-            isSuccess = false;
+            result = -99;
             e.printStackTrace();
         }
-        return isSuccess;
+        return result;
     }
-
-    /**
-     * 读取数据库中所有的历史位置信息
-     */
-    private void readAllHistoryPoints() {
-        try {
-            Cursor cursor = locHistoryDB.query(true, HistoryDBHelper.TABLE_NAME, null,
-                    "ID > ?", new String[]{"0"},
-                    null, null, "TimeStamp DESC", null);
-            historyPoints = new ArrayList<>();
-            while (cursor.moveToNext()) {
-                String address = cursor.getString(1);
-                double longitude = cursor.getDouble(2);
-                double latitude = cursor.getDouble(3);
-                long timeStamp = cursor.getInt(4);
-                Log.d(TAG, address + " " + longitude + "," + latitude + " " + timeStamp);
-                LatLng historyPoint = new LatLng(latitude, longitude);
-                addPointToHistoryPoints(historyPoint);
-            }
-            // 关闭光标
-            cursor.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 更新当前位置信息
-     */
-    private void setPoint(LatLng point) {
-        if (point != null) {
-            this.point = point;
-        }
-    }
-
-    /**
-     * 重置地图
-     */
-    private void resetMap() {
-        //灵隐支路7鼓
-        double dialog_lng_double = 120.114835;
-        double dialog_lat_double = 30.250508;
-
-        LatLng currentPt = new LatLng(dialog_lat_double, dialog_lng_double);
-        MapStatusUpdate mapstatusupdate = MapStatusUpdateFactory.newLatLng(currentPt);
-        mBaiduMap.setMapStatus(mapstatusupdate);
-        //更新当前位置信息
-        setPoint(currentPt);
-    }
-
 
     /**
      * 加载百度地图
@@ -215,14 +162,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
              * 单击地图
              */
             public void onMapClick(LatLng point) {
-                startMockGpsService(point);
+                startMockGpsService(point, false);
             }
 
             /**
              * 单击地图中的POI点
              */
             public boolean onMapPoiClick(MapPoi poi) {
-                startMockGpsService(poi.getPosition());
+                startMockGpsService(poi.getPosition(), false);
                 return false;
             }
         });
@@ -236,6 +183,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         //保存按钮
         setFabListener();
+
+        //悬浮窗
+        initFloatWindow();
+
+        //地图加载成功后读取所有历史记录并标记
+        readAllHistoryPoints();
 
         //如果GPS定位开启，则打开定位图层
         initLocationClient();
@@ -284,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (bdLocation == null || bdLocation.getLocType() == BDLocation.TypeServerError) {
                     return;
                 }
+
                 //当前定位的地址信息
                 address = bdLocation.getAddrStr();
                 String msg = address + " " + bdLocation.getLongitude() + "," + bdLocation.getLatitude();
@@ -296,13 +250,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         .direction(mCurrentDirection).latitude(bdLocation.getLatitude())
                         .longitude(bdLocation.getLongitude()).build();
                 mBaiduMap.setMyLocationData(locData);
-                if (isFirstLoc) {
-                    isFirstLoc = false;
-                    LatLng ll = new LatLng(bdLocation.getLatitude(),
-                            bdLocation.getLongitude());
-                    MapStatus.Builder builder = new MapStatus.Builder();
-                    builder.target(ll).zoom(18.0f);
-                    mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+
+                if (point == null) {
+                    //首次加载
+                    originPoint = point = new LatLng(bdLocation.getLatitude(), bdLocation.getLongitude());
+                    startMockGpsService(originPoint, true);
                 }
             }
         });
@@ -316,6 +268,61 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         locationClient.start();
     }
 
+    /**
+     * 读取数据库中所有的历史位置信息
+     */
+    private void readAllHistoryPoints() {
+        try {
+            Cursor cursor = locHistoryDB.query(HistoryDBHelper.TABLE_NAME, null,
+                    null, null,
+                    null, null, "TimeStamp DESC", null);
+            if (historyPoints == null) {
+                historyPoints = new ArrayList<>();
+            } else {
+                //清除已有记录
+                historyPoints.clear();
+                mBaiduMap.clear();
+            }
+            while (cursor.moveToNext()) {
+                String address = cursor.getString(0);
+                double longitude = cursor.getDouble(1);
+                double latitude = cursor.getDouble(2);
+                long timeStamp = cursor.getInt(3);
+                Log.d(TAG, address + " " + longitude + "," + latitude + " " + timeStamp);
+                LatLng historyPoint = new LatLng(latitude, longitude);
+                addPointToHistoryPoints(historyPoint);
+            }
+            // 关闭光标
+            cursor.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * 初始化悬浮窗
+     */
+    private void initFloatWindow() {
+        //悬浮窗
+        FloatWindow floatWindow = new FloatWindow(MainActivity.this, new FloatWindow.OnFloatWindowClickListener() {
+            int index = 0;
+
+            @Override
+            public void onFloatWindowClick() {
+                if (historyPoints.size() == 0) {
+                    DisplayToast("No History Location!!!");
+                    return;
+                }
+                if (index >= historyPoints.size()) {
+                    index = 0;
+                }
+                startMockGpsService(historyPoints.get(index), false);
+                index++;
+            }
+        });
+        floatWindow.showFloatWindow();
+    }
 
     /**
      * 储存位置信息到数据库
@@ -332,11 +339,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         contentValues.put("BD09Longitude", point.longitude);
         contentValues.put("BD09Latitude", point.latitude);
         contentValues.put("TimeStamp", System.currentTimeMillis() / 1000);
-        if (insertHistoryLocTable(locHistoryDB, HistoryDBHelper.TABLE_NAME, contentValues)) {
+        long result = insertHistoryLocTable(locHistoryDB, HistoryDBHelper.TABLE_NAME, contentValues);
+        if (result > 0) {
             addPointToHistoryPoints(point);
-            return "保存[" + address + "]成功！";
+            return "保存[" + address + "]成功！！！";
+        } else if (result == -1) {
+            return "请勿重复添加位置！！！";
         } else {
-            return "保存位置失败！";
+            return "保存位置失败！！！";
         }
     }
 
@@ -354,9 +364,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     /**
      * 开启位置模拟
      *
-     * @param point
+     * @param point 要前往的坐标
      */
-    private void startMockGpsService(LatLng point) {
+    private void startMockGpsService(LatLng point, boolean isZoom) {
+        if (point == null) {
+            return;
+        }
+
+        if (isZoom) {
+            //缩放移动地图位置
+            MapStatus.Builder builder = new MapStatus.Builder();
+            builder.target(point).zoom(18.0f);
+            mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+        } else {
+            //移动地图位置
+            mBaiduMap.setMapStatus(MapStatusUpdateFactory.newLatLng(point));
+        }
+
         //更新当前位置信息
         setPoint(point);
         //start mock location service
@@ -369,32 +393,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else {
             startService(mockLocServiceIntent);
         }
+    }
 
-        //这里开启悬浮窗
-        if (!isFloatWindowStart) {
-
-            //悬浮窗
-            FloatWindow floatWindow = new FloatWindow(MainActivity.this, new FloatWindow.OnFloatWindowClickListener() {
-                int index = 1;
-
-                @Override
-                public void onFloatWindowClick() {
-                    if (historyPoints.size() == 0) {
-                        DisplayToast("No History Location!!!");
-                        return;
-                    }
-
-
-                    if (index >= historyPoints.size()) {
-                        index = 0;
-                    }
-                    startMockGpsService(historyPoints.get(index));
-                    index++;
-                }
-            });
-            floatWindow.showFloatWindow();
-            isFloatWindowStart = true;
-        }
+    /**
+     * 更新当前位置信息
+     */
+    private void setPoint(LatLng point) {
+        this.point = point;
     }
 
     @Override
@@ -456,14 +461,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.action_setting) {
             //历史记录
             Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, HISTORY_CODE);
             return true;
         } else if (id == R.id.action_input) {
             //经纬度定位
             showLatlngDialog();
         } else if (id == R.id.action_resetMap) {
             //重置地图
-            resetMap();
+            startMockGpsService(originPoint, true);
         }
 
         return super.onOptionsItemSelected(item);
@@ -500,9 +505,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void showLatlngDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("输入经度和纬度(BD09坐标系)");
-        //    通过LayoutInflater来加载一个xml的布局文件作为一个View对象
+        // 通过LayoutInflater来加载一个xml的布局文件作为一个View对象
         View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.latlng_dialog, null);
-        //    设置我们自己定义的布局文件作为弹出框的Content
+        // 设置我们自己定义的布局文件作为弹出框的Content
         builder.setView(view);
 
         final EditText dialog_lng = view.findViewById(R.id.dialog_longitude);
@@ -511,20 +516,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                String dialog_lng_str = "", dialog_lat_str = "";
                 try {
-                    dialog_lng_str = dialog_lng.getText().toString().trim();
-                    dialog_lat_str = dialog_lat.getText().toString().trim();
-                    double dialog_lng_double = Double.valueOf(dialog_lng_str);
-                    double dialog_lat_double = Double.valueOf(dialog_lat_str);
+                    double dialog_lng_double = Double.valueOf(dialog_lng.getText().toString().trim());
+                    double dialog_lat_double = Double.valueOf(dialog_lat.getText().toString().trim());
                     if (dialog_lng_double > 180.0 || dialog_lng_double < -180.0 || dialog_lat_double > 90.0 || dialog_lat_double < -90.0) {
                         DisplayToast("经纬度超出限制!\n-180.0<经度<180.0\n-90.0<纬度<90.0");
                     } else {
-                        LatLng currentPt = new LatLng(dialog_lat_double, dialog_lng_double);
-                        MapStatusUpdate mapstatusupdate = MapStatusUpdateFactory.newLatLng(currentPt);
-                        mBaiduMap.setMapStatus(mapstatusupdate);
-                        //对地图的中心点进行更新
-                        setPoint(currentPt);
+                        LatLng targetPoint = new LatLng(dialog_lat_double, dialog_lng_double);
+                        startMockGpsService(targetPoint, true);
                     }
                 } catch (Exception e) {
                     DisplayToast("获取经纬度出错,请检查输入是否正确");
@@ -538,5 +537,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
         });
         builder.show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case HISTORY_CODE:
+                //从历史记录页面回来了
+                readAllHistoryPoints();
+                break;
+        }
     }
 }

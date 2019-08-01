@@ -16,4 +16,8 @@
     <string name="start">START</string>
     <string name="map_normal">普通图</string>
     <string name="map_satellite">卫星图</string>
+
+    <!--灵隐支路7鼓-->
+    <string name="longitude">120.114835</string>
+    <string name="latitude">30.250508</string>
 </resources>

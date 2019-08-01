@@ -31,31 +31,20 @@
         android:layout_weight="1"
         android:gravity="center_vertical"
         android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/LocationID"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"/>
-
         <TextView
             android:id="@+id/LoctionText"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="中国"
-            android:textSize="20sp" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/TimeText"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="2018-08-10 13:13:13" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/BDLatLngText"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="[经度:104.123456789 纬度:30.123456789]" />
+            android:layout_height="wrap_content" />
     </LinearLayout>
     <!--</android.support.v7.widget.CardView>-->
     <!--</LinearLayout>-->

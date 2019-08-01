@@ -87,12 +87,13 @@ public class HistoryActivity extends AppCompatActivity {
                                 new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        String locID = (String) ((TextView) view.findViewById(R.id.LocationID)).getText();
-                                        boolean deleteRet = deleteRecord(sqLiteDatabase, HistoryDBHelper.TABLE_NAME, Integer.valueOf(locID));
-                                        if (deleteRet) {
-                                            DisplayToast("删除成功!");
-                                            initListView();
-                                        }
+//                                        String locID = (String) ((TextView) view.findViewById(R.id.LocationID)).getText();
+//
+//                                        boolean deleteRet = deleteRecord(sqLiteDatabase, HistoryDBHelper.TABLE_NAME, Integer.valueOf(locID));
+//                                        if (deleteRet) {
+//                                            DisplayToast("删除成功!");
+//                                            initListView();
+//                                        }
                                     }
                                 })
                         .setNegativeButton("取消",
@@ -126,8 +127,8 @@ public class HistoryActivity extends AppCompatActivity {
                         this,
                         allHistoryRecord,
                         R.layout.history_item,
-                        new String[]{"key_id", "key_location", "key_time", "kdy_bdlatlng"},// 与下面数组元素要一一对应
-                        new int[]{R.id.LocationID, R.id.LoctionText, R.id.TimeText, R.id.BDLatLngText});
+                        new String[]{"key_location", "key_time", "kdy_bdlatlng"},// 与下面数组元素要一一对应
+                        new int[]{R.id.LoctionText, R.id.TimeText, R.id.BDLatLngText});
                 listView.setAdapter(simAdapt);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -140,19 +141,15 @@ public class HistoryActivity extends AppCompatActivity {
     private List<Map<String, String>> fetchAllRecord(SQLiteDatabase sqLiteDatabase, String tableName) {
         List<Map<String, String>> data = new ArrayList<>();
         try {
-            Cursor cursor = sqLiteDatabase.query(true, tableName, null,
-                    "ID > ?", new String[]{"0"},
-                    null, null, "TimeStamp DESC", null);
-            DecimalFormat decimalFormat  = new DecimalFormat("#.000000");
+            Cursor cursor = sqLiteDatabase.query(tableName, null, null, null, null, null, "TimeStamp DESC", null);
+            DecimalFormat decimalFormat = new DecimalFormat("#.000000");
             while (cursor.moveToNext()) {
                 Map<String, String> item = new HashMap<>();
-                int ID = cursor.getInt(0);
-                String address = cursor.getString(1);
-                double longitude = cursor.getDouble(2);
-                double latitude = cursor.getDouble(3);
-                long timeStamp = cursor.getInt(4);
+                String address = cursor.getString(0);
+                double longitude = cursor.getDouble(1);
+                double latitude = cursor.getDouble(2);
+                long timeStamp = cursor.getInt(3);
 
-                item.put("key_id", "" + ID);
                 item.put("key_location", address);
                 item.put("key_time", timeStamp2Date(Long.toString(timeStamp), null));
                 item.put("kdy_bdlatlng", decimalFormat.format(longitude) + "," + decimalFormat.format(latitude));
