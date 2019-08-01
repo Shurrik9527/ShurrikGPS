@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">ShurrikGPS</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Shurrik GPS</string>
+    <string name="nav_header_subtitle">fighter14ych2014@gmail.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_setting">历史记录</string>
+    <string name="startImgDesp">NULL</string>
+    <string name="resetmap">重置地图</string>
+    <string name="manual_input">经纬度定位</string>
+    <string name="author">Author: fighter14ych2014@gmail.com</string>
+    <string name="norecord">无历史纪录</string>
+    <string name="safecode">3A:74:69:35:EA:BC:82:79:2A:1A:75:13:48:3F:A4:A9:03:96:90:F2;com.shurrik.gps</string>
+    <string name="ak">KCv0UsPuxOOD9quRCALECO0kcD5w06e8</string>
+    <string name="start">START</string>
+    <string name="map_normal">普通图</string>
+    <string name="map_satellite">卫星图</string>
+</resources>

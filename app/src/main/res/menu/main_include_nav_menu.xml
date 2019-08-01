@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_history"
+            android:icon="@drawable/ic_history_black_36dp"
+            android:title="系统设置" />
+        <item
+            android:id="@+id/nav_manage"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="开发人员选项" />
+        <item
+            android:id="@+id/nav_bug_report"
+            android:icon="@drawable/ic_bug_report_18pt_3x"
+            android:title="问题反馈" />
+    </group>
+</menu>
