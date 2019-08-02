@@ -1,26 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rv_history_point"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal">
-
-    <TextView
-        android:id="@+id/no_record_textview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/norecord"
-        android:textSize="17sp"
-        android:padding="10dp"
-        android:textAlignment="center"
-        android:layout_gravity="center"
-        android:visibility="gone"/>
-
-
-    <ListView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/list_view">
-    </ListView>
-
-</LinearLayout>
+    android:layout_height="match_parent"/>

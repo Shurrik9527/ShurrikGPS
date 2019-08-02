@@ -41,13 +41,15 @@ import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
-import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
-import com.shurrik.service.HistoryDBHelper;
+import com.shurrik.database.HistoryDBHelper;
 import com.shurrik.service.MockGpsService;
 
 import java.util.ArrayList;
@@ -59,14 +61,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private final String TAG = MainActivity.class.getName();
 
     //位置欺骗相关
-    public List<LatLng> historyPoints;
+    public List<LatLng> mHistoryPoints;
 
-    private SQLiteDatabase locHistoryDB;
+    private SQLiteDatabase sqLiteDatabase;
 
     // 定位相关
     private LocationClient locationClient = null;
     private int mCurrentDirection = 0;
-    private MarkerOptions markerOptions = null;
+    private MarkerOptions mMarkerOptions = null;
     private String address = null;
     private LatLng point = null;
     private LatLng originPoint = null;
@@ -117,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         try {
             //数据库工具类
             HistoryDBHelper historyDBHelper = new HistoryDBHelper(getApplicationContext());
-            locHistoryDB = historyDBHelper.getWritableDatabase();
+            sqLiteDatabase = historyDBHelper.getWritableDatabase();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -126,10 +128,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     /**
      * sqlite 操作 插表HistoryLocation
      */
-    private long insertHistoryLocTable(SQLiteDatabase sqLiteDatabase, String tableName, ContentValues contentValues) {
+    private long insertHistoryLocTable(ContentValues contentValues) {
         long result;
         try {
-            result = sqLiteDatabase.insert(tableName, null, contentValues);
+            result = sqLiteDatabase.insert(HistoryDBHelper.TABLE_NAME, null, contentValues);
         } catch (Exception e) {
             result = -99;
             e.printStackTrace();
@@ -159,24 +161,40 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
             /**
-             * 单击地图
+             * 地图单击事件回调函数
+             * @param point 点击的地理坐标
              */
+            @Override
             public void onMapClick(LatLng point) {
                 startMockGpsService(point, false);
             }
 
             /**
-             * 单击地图中的POI点
+             * 地图内 Poi 单击事件回调函数
+             * @param poi 点击的 poi 信息
              */
+            @Override
             public boolean onMapPoiClick(MapPoi poi) {
                 startMockGpsService(poi.getPosition(), false);
                 return false;
             }
         });
 
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+            /**
+             * 地图 Marker 覆盖物点击事件监听函数
+             * @param marker 被点击的 marker
+             */
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                startMockGpsService(marker.getPosition(), false);
+                return false;
+            }
+        });
+
         //历史记录标记
         BitmapDescriptor bitmapDescriptor = BitmapDescriptorFactory.fromResource(R.drawable.icon_gcoding);
-        markerOptions = new MarkerOptions().icon(bitmapDescriptor);
+        mMarkerOptions = new MarkerOptions().icon(bitmapDescriptor);
 
         //地图类型切换
         setGroupListener();
@@ -273,21 +291,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      */
     private void readAllHistoryPoints() {
         try {
-            Cursor cursor = locHistoryDB.query(HistoryDBHelper.TABLE_NAME, null,
+            Cursor cursor = sqLiteDatabase.query(HistoryDBHelper.TABLE_NAME, null,
                     null, null,
                     null, null, "TimeStamp DESC", null);
-            if (historyPoints == null) {
-                historyPoints = new ArrayList<>();
+            if (mHistoryPoints == null) {
+                mHistoryPoints = new ArrayList<>();
             } else {
                 //清除已有记录
-                historyPoints.clear();
+                mHistoryPoints.clear();
                 mBaiduMap.clear();
             }
             while (cursor.moveToNext()) {
                 String address = cursor.getString(0);
                 double longitude = cursor.getDouble(1);
                 double latitude = cursor.getDouble(2);
-                long timeStamp = cursor.getInt(3);
+                long timeStamp = cursor.getLong(3);
                 Log.d(TAG, address + " " + longitude + "," + latitude + " " + timeStamp);
                 LatLng historyPoint = new LatLng(latitude, longitude);
                 addPointToHistoryPoints(historyPoint);
@@ -310,14 +328,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             @Override
             public void onFloatWindowClick() {
-                if (historyPoints.size() == 0) {
+                if (mHistoryPoints.size() == 0) {
                     DisplayToast("No History Location!!!");
                     return;
                 }
-                if (index >= historyPoints.size()) {
+                if (index >= mHistoryPoints.size()) {
                     index = 0;
                 }
-                startMockGpsService(historyPoints.get(index), false);
+                startMockGpsService(mHistoryPoints.get(index), false);
                 index++;
             }
         });
@@ -338,8 +356,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         contentValues.put("Location", address);
         contentValues.put("BD09Longitude", point.longitude);
         contentValues.put("BD09Latitude", point.latitude);
-        contentValues.put("TimeStamp", System.currentTimeMillis() / 1000);
-        long result = insertHistoryLocTable(locHistoryDB, HistoryDBHelper.TABLE_NAME, contentValues);
+        contentValues.put("TimeStamp", System.currentTimeMillis());
+        long result = insertHistoryLocTable(contentValues);
         if (result > 0) {
             addPointToHistoryPoints(point);
             return "保存[" + address + "]成功！！！";
@@ -356,9 +374,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      * @param point 待添加坐标
      */
     private void addPointToHistoryPoints(LatLng point) {
-        historyPoints.add(point);
-        markerOptions.position(point);
-        mBaiduMap.addOverlay(markerOptions);
+        mHistoryPoints.add(0, point);
+        mMarkerOptions.position(point);
+        mBaiduMap.addOverlay(mMarkerOptions);
     }
 
     /**
@@ -371,6 +389,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
 
+        //移动中心点
+        moveToThePoint(point, isZoom);
+
+        //更新当前位置信息
+        setPoint(point);
+
+        //启动位置模拟服务
+        Intent mockLocServiceIntent = new Intent(MainActivity.this, MockGpsService.class);
+        mockLocServiceIntent.putExtra("BD09Longitude", point.longitude);
+        mockLocServiceIntent.putExtra("BD09Latitude", point.latitude);
+        if (Build.VERSION.SDK_INT >= 26) {
+            startForegroundService(mockLocServiceIntent);
+        } else {
+            startService(mockLocServiceIntent);
+        }
+    }
+
+    /**
+     * 将地图中心点移动到指定位置
+     * @param point 待移动的点
+     * @param isZoom 是否缩放
+     */
+    private void moveToThePoint(LatLng point, boolean isZoom) {
         if (isZoom) {
             //缩放移动地图位置
             MapStatus.Builder builder = new MapStatus.Builder();
@@ -379,19 +420,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else {
             //移动地图位置
             mBaiduMap.setMapStatus(MapStatusUpdateFactory.newLatLng(point));
-        }
-
-        //更新当前位置信息
-        setPoint(point);
-        //start mock location service
-        Intent mockLocServiceIntent = new Intent(MainActivity.this, MockGpsService.class);
-        mockLocServiceIntent.putExtra("BD09Longitude", point.longitude);
-        mockLocServiceIntent.putExtra("BD09Latitude", point.latitude);
-        //insert end
-        if (Build.VERSION.SDK_INT >= 26) {
-            startForegroundService(mockLocServiceIntent);
-        } else {
-            startService(mockLocServiceIntent);
         }
     }
 
@@ -423,7 +451,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mMapView.onDestroy();
         mMapView = null;
         //close db
-        locHistoryDB.close();
+        sqLiteDatabase.close();
         super.onDestroy();
     }
 
