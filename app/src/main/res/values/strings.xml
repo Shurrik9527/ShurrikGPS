@@ -10,14 +10,13 @@
     <string name="resetmap">重置地图</string>
     <string name="manual_input">经纬度定位</string>
     <string name="author">Author: fighter14ych2014@gmail.com</string>
-    <string name="norecord">无历史纪录</string>
     <string name="safecode">3A:74:69:35:EA:BC:82:79:2A:1A:75:13:48:3F:A4:A9:03:96:90:F2;com.shurrik.gps</string>
     <string name="ak">KCv0UsPuxOOD9quRCALECO0kcD5w06e8</string>
-    <string name="start">START</string>
     <string name="map_normal">普通图</string>
     <string name="map_satellite">卫星图</string>
 
     <!--灵隐支路7鼓-->
     <string name="longitude">120.114835</string>
     <string name="latitude">30.250508</string>
+    <string name="next">NEXT</string>
 </resources>

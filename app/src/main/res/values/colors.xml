@@ -154,7 +154,8 @@
     <color name="white_pressed">#f1f1f1</color>
     <color name="blue_semi_transparent">#805677fc</color>
     <color name="blue_semi_transparent_pressed">#80738ffe</color>
-    <color name="black_semi_transparent">#B2000000</color>
+    <color name="black_dark_transparent">#B2000000</color>
+    <color name="black_transparent">#55000000</color>
 
 
 

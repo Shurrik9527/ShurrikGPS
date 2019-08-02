@@ -16,14 +16,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:elevation="0dp">
-
-            <!--<android.support.design.widget.CollapsingToolbarLayout-->
-                <!--android:id="@+id/collapsingToolbarLayout"-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="match_parent"-->
-                <!--app:contentScrim="@color/colorPrimary"-->
-                <!--app:layout_scrollFlags="scroll|enterAlways|enterAlwaysCollapsed">-->
-
                 <android.support.v7.widget.Toolbar
                     android:id="@+id/toolbar"
                     android:layout_width="match_parent"
@@ -31,7 +23,6 @@
                     android:background="?attr/colorPrimary"
                     android:minHeight="?attr/actionBarSize"
                     android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
-            <!--</android.support.design.widget.CollapsingToolbarLayout>-->
         </android.support.design.widget.AppBarLayout>
 
         <FrameLayout
@@ -49,8 +40,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top"
-                android:layout_margin="5dip"
-                android:background="@color/black_semi_transparent"
+                android:gravity="end"
+                android:padding="@dimen/element_half_spacing"
+                android:background="@color/black_dark_transparent"
                 android:orientation="horizontal">
 
                 <RadioButton

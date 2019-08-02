@@ -46,8 +46,6 @@ import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
-import com.baidu.mapapi.map.OverlayOptions;
-import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.shurrik.database.HistoryDBHelper;
 import com.shurrik.service.MockGpsService;
@@ -323,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      */
     private void initFloatWindow() {
         //悬浮窗
-        FloatWindow floatWindow = new FloatWindow(MainActivity.this, new FloatWindow.OnFloatWindowClickListener() {
+        NextFloatWindow floatWindow = new NextFloatWindow(MainActivity.this, new NextFloatWindow.OnFloatWindowClickListener() {
             int index = 0;
 
             @Override

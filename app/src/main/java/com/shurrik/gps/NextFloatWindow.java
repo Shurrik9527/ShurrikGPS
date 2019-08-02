@@ -14,7 +14,7 @@ import android.view.WindowManager;
 
 import java.lang.reflect.Field;
 
-public class FloatWindow implements View.OnTouchListener {
+public class NextFloatWindow implements View.OnTouchListener {
 
     private Context mContext;
     private WindowManager.LayoutParams mWindowParams;
@@ -37,7 +37,7 @@ public class FloatWindow implements View.OnTouchListener {
         void onFloatWindowClick();
     }
 
-    FloatWindow(Context context, OnFloatWindowClickListener listener) {
+    NextFloatWindow(Context context, OnFloatWindowClickListener listener) {
         this.mContext = context;
         this.listener = listener;
         initFloatWindow();
@@ -113,7 +113,7 @@ public class FloatWindow implements View.OnTouchListener {
 //            mWindowParams.x = metrics.widthPixels;
             mWindowParams.x = 0;
 //            mWindowParams.y = metrics.heightPixels/3*2 - statusBarHeight;
-            mWindowParams.y = metrics.heightPixels / 8 - statusBarHeight;
+            mWindowParams.y = statusBarHeight * 2 + statusBarHeight / 2;
             mWindowManager.addView(mFloatLayout, mWindowParams);
         }
     }
